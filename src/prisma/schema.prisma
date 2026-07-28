@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(cuid())
+  email      String     @unique
+  password   String
+  name       String
+  role       Role       @default(USER)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  sales      Sale[]
+  activities Activity[]
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  phone      String
+  address    String
+  company    String?
+  totalSpent Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  sales      Sale[]
+}
+
+model Product {
+  id          String     @id @default(cuid())
+  name        String
+  sku         String     @unique
+  category    String
+  price       Float
+  cost        Float
+  stock       Int        @default(0)
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  saleItems   SaleItem[]
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  invoiceNo     String        @unique
+  customerId    String
+  userId        String
+  total         Float
+  tax           Float         @default(0)
+  discount      Float         @default(0)
+  grandTotal    Float
+  status        SaleStatus    @default(COMPLETED)
+  paymentMethod PaymentMethod
+  notes         String?
+  saleDate      DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  items         SaleItem[]
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Float
+  total     Float
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  action      String
+  description String
+  userId      String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum SaleStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  CREDIT
+}
